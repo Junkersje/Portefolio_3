@@ -35,21 +35,23 @@ function checkBtn (){
         alreadyGuessedIt()
         return
     }
-    let isGuessRight = Boolean(isNumberTheSame(getInputNumber(), numberToGuess))
+    const isGuessRight = Boolean(isNumberTheSame(getInputNumber(), numberToGuess))
     addAPointToScore(currentScore)
     console.log(`Is Number the same: ${isGuessRight}`)
     if (isGuessRight){
         isHighscoreBeatenWith(currentScore)
         showBoxNumber()
+        //add confetti and a positive sound
         numberToGuess=null //To avoid spamming correct answer, numberToGuess is set to null
     } else {
         addToGuessedNumbersList(getInputNumber())
         clearInputField()
+        //add negative sound
     }
     updateMessage(currentScore, isGuessRight)
 }
 function againBtn (){
-    if(currentScore===0 && highScore<20){ //Reset highscore
+    if(currentScore===0 && highScore<20){ //Reset highscore if highscore is present
         document.querySelector(".again").textContent = "Reset Highscore?"
         againButton.addEventListener('click', resetHighscore)
         return
@@ -62,12 +64,12 @@ function againBtn (){
     numberToGuess = generateNewNumberToGuess()
     resetScore()
     setStartMessage()
-
 }
 function resetButtons(){
     checkButton.removeEventListener('click', againBtn)
     checkButton.addEventListener('click', checkBtn)
     document.querySelector(".check").textContent = "Check!"
+    againButton.removeEventListener('click', resetHighscore)
     againButton.addEventListener('click', againBtn)
     document.querySelector(".again").textContent = "Again!"
 }
@@ -133,8 +135,12 @@ function setHighscoreTo(newHighscore){
 function isHighscoreBeatenWith(score){
     return score < highScore;
 }
+function resetHighscore (){
+    console.log("reset highscore")
+    startGame()
+}
 /*
-Message
+Messages
  */
 function setStartMessage(){
     document.querySelector(".message").textContent = "Start guessing..."
@@ -154,7 +160,4 @@ function alreadyGuessedIt (){
     document.querySelector(".message").textContent = "You have already guessed it... Play again?"
     document.querySelector(".check").textContent = "Play Again?"
     checkButton.addEventListener('click', againBtn)
-}
-function resetHighscore (){
-    startGame()
 }
