@@ -1,13 +1,12 @@
 /*
 Variables to be used throughout the script
  */
-const defaultScore = 0
-const defaultHighscore = 20
 let currentScore
 let numberToGuess
-let highScore
+let highScore = null
 let inputNumber
 let guessedNumbers = [];
+let isGuessRight
 const againButton = document.querySelector(".again")
 const checkButton = document.querySelector(".check")
 /*
@@ -16,62 +15,91 @@ Initialize game
 console.log("Welcome to inspector tool you cheater")
 startGame()
 
+function gameCompleted(){
+    addQuestionMarkCover(false)
+    if (currentScore<highScore || highScore === null){ //New highscore
+        updateHighscore(currentScore)
+        document.querySelector(".message").textContent = "Correct! - New Highscore! \n Play again?"
+    } else {
+        document.querySelector(".message").textContent = "YES! You have guessed it... Play again?"
+    }
+    document.querySelector(".check").textContent = "Play Again?"
+    checkButton.addEventListener('click', againBtn)
+}
+
 /*
 Setting defaults
  */
 function startGame (){
+    addQuestionMarkCover(true)
     numberToGuess = generateNewNumberToGuess()
-    clearInputField()
-    updateScoreTo(defaultScore)
-    setHighscoreTo(defaultHighscore)
     resetButtons()
+    clearGuessedNumbersList()
+    clearInputField()
+    updateScore(0)
     document.querySelector(".highscore").textContent = `No Highscore`
+    updateMessage("Start guessing...")
+    //when game starts and a highscore is present set againbutton to reset
+
 }
 /*
 buttons
  */
 function checkBtn (){
-    if (numberToGuess===null){ //If already guessed number will be null
-        alreadyGuessedIt()
+    inputNumber = getInputNumber()
+    addToGuessedNumbersList(inputNumber)
+    isGuessRight = inputNumber === numberToGuess
+    if(20 < inputNumber || inputNumber < 1){
+        updateMessage("Enter only numbers between 1 - 20")
         return
     }
-    const isGuessRight = Boolean(isNumberTheSame(getInputNumber(), numberToGuess))
-    addAPointToScore(currentScore)
-    console.log(`Is Number the same: ${isGuessRight}`)
-    if (isGuessRight){
-        isHighscoreBeatenWith(currentScore)
-        showBoxNumber()
-        //add confetti and a positive sound
-        numberToGuess=null //To avoid spamming correct answer, numberToGuess is set to null
+    updateScore(currentScore+1)
+    console.log(`Is Number ${inputNumber} the same as ${numberToGuess} :  ${isGuessRight}`)
+    if(isGuessRight){
+        gameCompleted()
     } else {
-        addToGuessedNumbersList(getInputNumber())
         clearInputField()
         //add negative sound
     }
-    updateMessage(currentScore, isGuessRight)
 }
 function againBtn (){
-    if(currentScore===0 && highScore<20){ //Reset highscore if highscore is present
-        document.querySelector(".again").textContent = "Reset Highscore?"
-        againButton.addEventListener('click', resetHighscore)
-        return
-    }
-    console.log(`Again button is clicked.\nScore reset`);
-    resetButtons()
-    hideBoxNumber()
-    clearInputField()
-    clearGuessedNumbersList()
+    addQuestionMarkCover(true)
     numberToGuess = generateNewNumberToGuess()
-    resetScore()
-    setStartMessage()
+    resetButtons()
+    clearGuessedNumbersList()
+    clearInputField()
+    updateScore(0)
+    if (highScore !== null){
+        document.querySelector(".again").textContent = "Reset Highscore?"
+        againButton.addEventListener('click', () => {
+            updateHighscore(null)
+            resetButtons()
+            document.querySelector(".highscore").textContent = `No Highscore`
+        })
+    }
+    updateMessage("Start guessing...")
 }
+
 function resetButtons(){
     checkButton.removeEventListener('click', againBtn)
     checkButton.addEventListener('click', checkBtn)
     document.querySelector(".check").textContent = "Check!"
-    againButton.removeEventListener('click', resetHighscore)
+    againButton.removeEventListener('click', startGame)
     againButton.addEventListener('click', againBtn)
     document.querySelector(".again").textContent = "Again!"
+}
+function updateButtons() {
+    if (0 < currentScore) {
+        resetButtons()
+    } else if (currentScore === 0 && highScore !== null) {
+        document.querySelector(".again").textContent = "Reset Highscore?"
+        againButton.addEventListener('click', () => {
+            updateHighscore(null)
+            resetButtons()
+            document.querySelector(".highscore").textContent = `No Highscore`
+        })
+    }
+
 }
 /*
 Input field
@@ -81,7 +109,7 @@ function getInputNumber (){
         return inputNumber
 }
 function clearInputField (){
-    document.querySelector('.guess').value = "0";
+    document.querySelector('.guess').value = null ;
 }
 /*
 Number to guess and guessed numbers
@@ -91,10 +119,6 @@ function generateNewNumberToGuess (){
     numberToGuess = Math.floor(Math.random() * (20 - 1) + 1);
     console.log("Generated number to guess: " + numberToGuess)
     return numberToGuess
-}
-function isNumberTheSame (a, b) {
-    console.log(`Checking if '${a}' is the same as '${b}'`)
-    return Boolean(a === b)
 }
 function addToGuessedNumbersList (numberToAdd) {
     guessedNumbers.push(numberToAdd)
@@ -107,37 +131,27 @@ function clearGuessedNumbersList(){
 /*
 Question mark concealer
  */
-function showBoxNumber(){
-    document.querySelector(".number").textContent = numberToGuess.toString()
-}
-function hideBoxNumber(){
-    document.querySelector(".number").textContent = "?"
+function addQuestionMarkCover(covered){
+    if (covered){
+        document.querySelector(".number").textContent = "?"
+    } else {
+        document.querySelector(".number").textContent = numberToGuess.toString()
+    }
 }
 /*
 Score and Highscore
  */
-function updateScoreTo (setScore){
+function updateScore (setScore){
     currentScore = setScore
     document.querySelector(".score").textContent = setScore.toString()
 }
 function resetScore(){
     currentScore = 0
-    updateScoreTo(currentScore)
+    updateScore(currentScore)
 }
-function addAPointToScore(score){
-    score++
-    updateScoreTo(score)
-}
-function setHighscoreTo(newHighscore){
+function updateHighscore(newHighscore){
     document.querySelector(".highscore").textContent = `${newHighscore}`
     highScore=newHighscore
-}
-function isHighscoreBeatenWith(score){
-    return score < highScore;
-}
-function resetHighscore (){
-    console.log("reset highscore")
-    startGame()
 }
 /*
 Messages
@@ -145,10 +159,10 @@ Messages
 function setStartMessage(){
     document.querySelector(".message").textContent = "Start guessing..."
 }
-function updateMessage (score, isCorrect) {
-    if (isCorrect && isHighscoreBeatenWith(score)){
+function OLDDDDDDupdateMessage (score, isCorrect) {
+    if (isCorrect && score < highScore){
         document.querySelector(".message").textContent = "Correct! - New Highscore!"
-        setHighscoreTo(score)
+        updateHighscore(score)
     } else if (isCorrect) {
         document.querySelector(".message").textContent = "That's Right!"
     } else {
@@ -156,8 +170,6 @@ function updateMessage (score, isCorrect) {
     }
 
 }
-function alreadyGuessedIt (){
-    document.querySelector(".message").textContent = "You have already guessed it... Play again?"
-    document.querySelector(".check").textContent = "Play Again?"
-    checkButton.addEventListener('click', againBtn)
+function updateMessage(string){
+    document.querySelector(".message").textContent = `${string}`
 }
